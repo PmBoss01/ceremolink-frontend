@@ -24,3 +24,47 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Rich text editor (Tiptap) ───────────────────────────── */
+
+/* Shared prose styles used inside the editor AND on the public event page */
+.rich-content h1,
+.rich-editor h1 { font-size: 1.875rem; font-weight: 700; line-height: 1.25; margin: 0.75rem 0 0.4rem; }
+.rich-content h2,
+.rich-editor h2 { font-size: 1.5rem;   font-weight: 700; line-height: 1.3;  margin: 0.65rem 0 0.35rem; }
+.rich-content h3,
+.rich-editor h3 { font-size: 1.25rem;  font-weight: 600; line-height: 1.35; margin: 0.55rem 0 0.3rem; }
+.rich-content h4,
+.rich-editor h4 { font-size: 1.1rem;   font-weight: 600; line-height: 1.4;  margin: 0.5rem 0 0.25rem; }
+
+.rich-content p,
+.rich-editor p  { margin: 0.3rem 0; line-height: 1.65; }
+
+.rich-content ul,
+.rich-editor ul { list-style: disc;    padding-left: 1.6rem; margin: 0.4rem 0; }
+.rich-content ol,
+.rich-editor ol { list-style: decimal; padding-left: 1.6rem; margin: 0.4rem 0; }
+.rich-content li,
+.rich-editor li { margin: 0.2rem 0; }
+
+.rich-content strong, .rich-editor strong { font-weight: 700; }
+.rich-content em,     .rich-editor em     { font-style: italic; }
+.rich-content u,      .rich-editor u      { text-decoration: underline; }
+.rich-content s,      .rich-editor s      { text-decoration: line-through; }
+
+/* Editor-only rules */
+.rich-editor {
+  height: 240px;
+  overflow-y: auto;
+  padding: 1rem;
+  outline: none;
+}
+
+/* Placeholder */
+.rich-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
