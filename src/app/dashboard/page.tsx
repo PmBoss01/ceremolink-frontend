@@ -82,7 +82,7 @@ function getProRenewal(
 }
 
 const FREE_WINDOW_MS = 3 * 60 * 60 * 1000; // 3 hours
-const PER_EVENT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+const PER_EVENT_WINDOW_MS = 2 * 60 * 1000; // TEMP: 2 min — revert to 24 * 60 * 60 * 1000 (24 h)
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -133,11 +133,10 @@ export default function DashboardPage() {
   const isPro = effectivePlan === 'pro';
   const eventsUsed = user?.events_used ?? 0;
   // Any published event that has hit its window limit (3h free, 24h per_event)
-  const hasExpiredEvent = events.some((e) => {
+  const hasExpiredEvent = !isPro && events.some((e) => {
     if (!e.is_published || !e.published_at) return false;
     if (e.paid_per_event) return getEventExpiry(e.published_at, PER_EVENT_WINDOW_MS, now)?.isExpired ?? false;
-    if (!isPro) return getEventExpiry(e.published_at, FREE_WINDOW_MS, now)?.isExpired ?? false;
-    return false;
+    return getEventExpiry(e.published_at, FREE_WINDOW_MS, now)?.isExpired ?? false;
   });
 
   // Any Pro event whose published_at + 1 month/year window has passed
@@ -321,11 +320,11 @@ export default function DashboardPage() {
           {events.map((event) => {
             // Show countdown whenever published_at is set — the window ticks
             // regardless of whether the event is currently published or not.
-            const timedExpiry = event.paid_per_event
+            const timedExpiry = isPro
+              ? null
+              : event.paid_per_event
               ? getEventExpiry(event.published_at, PER_EVENT_WINDOW_MS, now)
-              : !isPro
-              ? getEventExpiry(event.published_at, FREE_WINDOW_MS, now)
-              : null;
+              : getEventExpiry(event.published_at, FREE_WINDOW_MS, now);
             const isExpired = timedExpiry?.isExpired ?? false;
 
             // Pro users: show subscription renewal countdown on each card

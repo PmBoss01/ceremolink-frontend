@@ -58,6 +58,8 @@ body {
   overflow-y: auto;
   padding: 1rem;
   outline: none;
+  color: #111827; /* always dark — overrides dark-mode body foreground */
+  background: #ffffff;
 }
 
 /* Placeholder */

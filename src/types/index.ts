@@ -2,6 +2,7 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  is_staff: boolean;
   plan: 'free' | 'per_event' | 'pro';
   subscription_status: string;
   subscription_interval: string;       // 'month' | 'year' | ''
@@ -18,6 +19,7 @@ export interface Event {
   title: string;
   slug: string;
   description: string;
+  event_date: string | null;
   content: string;
   pdf_file: string | null;
   cover_image: string | null;
@@ -35,6 +37,7 @@ export interface PublicEvent {
   title: string;
   slug: string;
   description: string;
+  event_date: string | null;
   content: string;
   pdf_file: string | null;
   cover_image: string | null;

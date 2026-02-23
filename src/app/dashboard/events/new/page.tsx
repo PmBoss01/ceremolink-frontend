@@ -16,7 +16,7 @@ export default function NewEventPage() {
   const [paying, setPaying] = useState(false);
   const [toast, setToast] = useState<{ message: string; type?: 'success' | 'error' } | null>(null);
   const [contentType, setContentType] = useState<'editor' | 'pdf'>('editor');
-  const [form, setForm] = useState({ title: '', description: '', content: '' });
+  const [form, setForm] = useState({ title: '', description: '', event_date: '', content: '' });
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -30,6 +30,7 @@ export default function NewEventPage() {
     const formData = new FormData();
     formData.append('title', form.title);
     formData.append('description', form.description);
+    if (form.event_date) formData.append('event_date', form.event_date);
     formData.append('content', contentType === 'editor' ? form.content : '');
     if (coverImage) formData.append('cover_image', coverImage);
     if (contentType === 'pdf' && pdfFile) formData.append('pdf_file', pdfFile);
@@ -157,7 +158,7 @@ export default function NewEventPage() {
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="e.g. Memorial Service for John Doe"
             />
           </div>
@@ -170,9 +171,22 @@ export default function NewEventPage() {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={3}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
               placeholder="Brief description of the event"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Event Date &amp; Time
+            </label>
+            <input
+              type="datetime-local"
+              value={form.event_date}
+              onChange={(e) => setForm({ ...form, event_date: e.target.value })}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">When the event takes place. Shown on the public page for guests.</p>
           </div>
 
           <div>

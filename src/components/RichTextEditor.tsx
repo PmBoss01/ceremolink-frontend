@@ -116,6 +116,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
     editorProps: {
       attributes: {
         class: 'rich-editor focus:outline-none',
+        style: 'color: #111827; background: #ffffff;',
         ...(placeholder ? { 'data-placeholder': placeholder } : {}),
       },
     },

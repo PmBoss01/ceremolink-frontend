@@ -84,6 +84,7 @@ function SuccessContent() {
   useEffect(() => {
     if (countdown === null) return;
     if (countdown === 0) {
+      sessionStorage.setItem('justUpgraded', '1'); // triggers loading overlay in dashboard
       router.push('/dashboard');
       return;
     }
@@ -94,7 +95,10 @@ function SuccessContent() {
   // Per-event upfront credit: also auto-redirect after brief pause
   useEffect(() => {
     if (!isPerEvent) return;
-    const t = setTimeout(() => router.push('/dashboard'), 3000);
+    const t = setTimeout(() => {
+      sessionStorage.setItem('justUpgraded', '1'); // triggers loading overlay in dashboard
+      router.push('/dashboard');
+    }, 3000);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

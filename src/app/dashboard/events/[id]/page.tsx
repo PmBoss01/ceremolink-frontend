@@ -17,9 +17,11 @@ export default function EditEventPage() {
   const searchParams = useSearchParams();
   const viewMode = searchParams.get('view');       // 'qr' or null (edit)
   const paymentSuccess = searchParams.get('payment') === 'success';
+  const sessionId = searchParams.get('session_id');
 
   const effectivePlan = user?.plan ?? 'free';
   const isFree = effectivePlan === 'free';
+  const isPro = effectivePlan === 'pro';
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,7 @@ export default function EditEventPage() {
   const [form, setForm] = useState({
     title: '',
     description: '',
+    event_date: '',
     content: '',
     is_published: false,
   });
@@ -38,23 +41,38 @@ export default function EditEventPage() {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
 
+  const loadEvent = (eventData: Event) => {
+    setEvent(eventData);
+    setForm({
+      title: eventData.title,
+      description: eventData.description,
+      event_date: eventData.event_date ? eventData.event_date.slice(0, 16) : '',
+      content: eventData.content,
+      is_published: eventData.is_published || (eventData.is_paid && eventData.published_at === null),
+    });
+    if (eventData.pdf_file) setContentType('pdf');
+  };
+
   useEffect(() => {
     api
       .get(`/events/${id}/`)
-      .then(({ data }) => {
-        setEvent(data);
-        setForm({
-          title: data.title,
-          description: data.description,
-          content: data.content,
-          // Paid events that have never been published default to checked (ready to go live)
-          is_published: data.is_published || (data.is_paid && data.published_at === null),
-        });
-        if (data.pdf_file) setContentType('pdf');
-      })
+      .then(({ data }) => loadEvent(data))
       .catch(() => router.push('/dashboard'))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, router]);
+
+  // When redirected back from Stripe, confirm the session immediately so the
+  // event shows as live without waiting for the async webhook.
+  useEffect(() => {
+    if (!paymentSuccess || !sessionId) return;
+    api
+      .post('/payments/confirm-session/', { session_id: sessionId })
+      .then(() => api.get(`/events/${id}/`))
+      .then(({ data }) => loadEvent(data))
+      .catch(() => {}); // webhook will handle activation as fallback
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentSuccess, sessionId, id]);
 
   const handlePayPerEvent = async () => {
     setPaying(true);
@@ -98,9 +116,11 @@ export default function EditEventPage() {
       const formData = new FormData();
       formData.append('title', form.title);
       formData.append('description', form.description);
+      if (form.event_date) formData.append('event_date', form.event_date);
       formData.append('content', contentType === 'editor' ? form.content : '');
-      // Free plan events are always published — never send false
-      formData.append('is_published', String(isFree ? true : form.is_published));
+      // Free plan events (old or current) are always published — never send false
+      const isFreeEvent = event?.is_paid && !event?.paid_per_event && !isPro;
+      formData.append('is_published', String((isFree || isFreeEvent) ? true : form.is_published));
       if (coverImage) formData.append('cover_image', coverImage);
       if (contentType === 'pdf' && pdfFile) formData.append('pdf_file', pdfFile);
 
@@ -227,10 +247,10 @@ export default function EditEventPage() {
         <div className="mb-6 flex items-start gap-3 bg-green-50 border border-green-200 rounded-xl px-5 py-4">
           <span className="text-xl mt-0.5">✅</span>
           <div>
-            <p className="text-sm font-semibold text-green-800">Payment confirmed!</p>
+            <p className="text-sm font-semibold text-green-800">Payment confirmed — your event is now live!</p>
             <p className="text-xs text-green-600 mt-0.5">
-              Review your event details below, then click <strong>Update Event</strong> to publish it and go live.
-              Your 24-hour window starts the moment you save.
+              Your 24-hour publish window has started. A receipt and event confirmation have been sent to your email.
+              You can update your event details below at any time.
             </p>
           </div>
         </div>
@@ -250,7 +270,7 @@ export default function EditEventPage() {
           </p>
         </div>
       )}
-      {isFree && !event.paid_per_event && (
+      {event.is_paid && !event.paid_per_event && !isPro && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 mb-6">
           <p className="text-sm font-semibold text-indigo-800 mb-1">Free Plan — 3-Hour Publish Window</p>
           <p className="text-xs text-indigo-700">
@@ -298,7 +318,7 @@ export default function EditEventPage() {
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
@@ -312,8 +332,21 @@ export default function EditEventPage() {
                 setForm({ ...form, description: e.target.value })
               }
               rows={3}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Event Date &amp; Time
+            </label>
+            <input
+              type="datetime-local"
+              value={form.event_date}
+              onChange={(e) => setForm({ ...form, event_date: e.target.value })}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">When the event takes place. Shown on the public page for guests.</p>
           </div>
 
           <div>
@@ -409,8 +442,8 @@ export default function EditEventPage() {
           </div>
 
           {/* Publish toggle */}
-          {isFree ? (
-            /* Free plan: permanently published — lock the toggle */
+          {event.is_paid && !event.paid_per_event && !isPro ? (
+            /* Free plan event (original or after upgrade): permanently published — lock the toggle */
             <div className="flex items-center gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
               <input
                 type="checkbox"
